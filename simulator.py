@@ -1,6 +1,9 @@
 from dataclasses import dataclass, replace
 from itertools import permutations
 
+import numpy as np
+from jaxtyping import Float
+
 ######################
 # Game Configuration #
 ######################
@@ -8,17 +11,14 @@ from itertools import permutations
 
 @dataclass(frozen=True)
 class Game:
-    players: tuple[int, ...]  # the attractiveness values for the players' films
-    demand: tuple[int, ...]  # per-week demand
-    alphas: tuple[float, ...]  # timing payoffs
-    beta: float  # switching cost
-
-    def __post_init__(self) -> None:
-        assert len(self.demand) == len(self.alphas)
+    attractivenesses: Float[np.ndarray, " player"]
+    demand: Float[np.ndarray, " week"]
+    alphas: Float[np.ndarray, " week"]
+    beta: float
 
     @property
     def num_players(self) -> int:
-        return len(self.players)
+        return len(self.attractivenesses)
 
     @property
     def num_weeks(self) -> int:
@@ -36,52 +36,48 @@ type Action = int | None
 
 
 @dataclass(frozen=True)
+class ChanceState:
+    week: int  # for week == num_weeks, this is a terminal state
+    releases: tuple[int | None, ...]
+
+
+@dataclass(frozen=True)
 class DecisionState:
     week: int
-    ordering: tuple[int, ...]  # player ordering
-    turn: int  # within player ordering
-    releases: tuple[int | None, ...]  # per-played planned or actual release dates
-    switches: tuple[int, ...]  # per-player number of release date switches
+    ordering: tuple[int, ...]
+    turn: int
+    releases: tuple[int | None, ...]
 
     def __post_init__(self) -> None:
         num_players = len(self.ordering)
         assert self.turn < num_players
         assert len(self.releases) == num_players
-        assert len(self.switches) == num_players
 
     @property
     def current_player(self) -> int:
         return self.ordering[self.turn]
 
 
-@dataclass(frozen=True)
-class ChanceState:
-    week: int
-    releases: tuple[int | None, ...]  # current announcement weeks
-    switches: tuple[int, ...]  # number of changes
+type State = ChanceState | DecisionState
 
 
-type State = DecisionState | ChanceState
-
-
-#######################
-# Transition Function #
-#######################
+################################
+# Transition Function + Reward #
+################################
 
 
 def initial_state(game: Game) -> State:
-    return ChanceState(0, (None,) * game.num_players, (0,) * game.num_players)
+    return ChanceState(0, (None,) * game.num_players)
 
 
 def valid_actions(game: Game, state: State) -> tuple[Action, ...]:
     # For ChanceState, the only valid action is to sample (represented as None).
     if isinstance(state, ChanceState):
-        return None
+        return (None,)
 
     # For DecisionState, valid actions are do nothing (None) or pick a new week (int).
     planned_release = state.releases[state.current_player]
-    if state.week > planned_release:
-        # If the release already happened, it can't be changed.
+    if planned_release is not None and state.week > planned_release:
         return (None,)
     else:
         # If the release hasn't happened yet, it can be changed.
@@ -89,43 +85,80 @@ def valid_actions(game: Game, state: State) -> tuple[Action, ...]:
         return (None, *[w for w in weeks if w != planned_release])
 
 
-def transition(game: Game, state: State, action: Action) -> tuple[State, ...]:
+def advance(game: Game, state: State, action: Action) -> tuple[State, ...]:
     if isinstance(state, ChanceState):
         # Return all possible turn orderings for the next week.
         possibilities = [
-            DecisionState(state.week, tuple(order), 0, state.releases, state.switches)
+            DecisionState(state.week, tuple(order), 0, state.releases)
             for order in permutations(range(game.num_players))
         ]
         return tuple(possibilities)
 
     # Update the releases and switches based on the action.
     releases = list(state.releases)
-    switches = list(state.switches)
     if action is not None:
-        if releases[state.current_player] is not None:
-            switches[state.current_player] += 1
         releases[state.current_player] = action
     releases = tuple(releases)
-    switches = tuple(switches)
 
     if state.turn == game.num_players - 1:
-        # If all players have gone, we must pick a random ordering again.
-        return ChanceState(state.week + 1, releases, switches)
+        # If all players have gone, we move to the next week.
+        return (ChanceState(state.week + 1, releases),)
     else:
         # Otherwise, we advance to the next player.
-        return replace(state, turn=state.turn + 1, releases=releases, switches=switches)
+        return (replace(state, turn=state.turn + 1, releases=releases),)
 
 
-def payoff(game: Game, state: State) -> float:
-    pass
+def compute_reward(
+    game: Game,
+    old: State,
+    new: State,
+) -> Float[np.ndarray, " player"]:
+    reward = np.zeros((game.num_players,), dtype=np.float32)
+
+    # ChanceState does not create rewards.
+    if isinstance(old, ChanceState):
+        return reward
+
+    player = old.current_player
+    attractiveness = game.attractivenesses[player]
+    old_release = old.releases[player]
+    new_release = new.releases[player]
+
+    # Account for timing.
+    if new_release is not None:
+        reward[player] += game.alphas[old.week] * attractiveness
+
+    # Account for switching.
+    if old_release is not None and old_release != new_release:
+        reward[player] += game.beta * attractiveness
+
+    # Account for releasing.
+    if old.turn != new.turn:
+        release_reward = np.zeros_like(reward)
+        for i in range(game.num_players):
+            if new.releases[i] == old.week:
+                release_reward[i] += game.attractivenesses[i]
+        total = sum(release_reward)
+        demand = game.demand[old.week]
+        if total > demand:
+            release_reward *= demand / total
+        reward += release_reward
+
+    return reward
 
 
 if __name__ == "__main__":
     game = Game(
-        (10.0, 10.0),  # two equally strong players
-        (0.0, 0.0, 5.0, 5.0),  # two weeks with equal demand
-        (-0.01, 0.01, 0.01, 0.01),  # best to release after waiting one week
-        0.1,  # cost of switching
+        np.array((10.0, 10.0)),  # two equally strong players
+        np.array((0.0, 0.0, 5.0, 5.0)),  # two weeks with equal demand
+        np.array((-0.01, 0.01, 0.01, 0.01)),  # best to release after waiting one week
+        -0.1,  # cost of switching
     )
+    old = initial_state(game)
+    new = advance(game, old, valid_actions(game, old)[0])[0]
+    reward = compute_reward(game, old, new)
+    old = new
+    new = advance(game, old, 0)[0]
+    reward = compute_reward(game, old, new)
 
     a = 1
