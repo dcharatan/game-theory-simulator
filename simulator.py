@@ -133,7 +133,7 @@ def compute_reward(
         reward[player] += game.beta * attractiveness
 
     # Account for releasing.
-    if old.turn != new.turn:
+    if old.week != new.week:
         release_reward = np.zeros_like(reward)
         for i in range(game.num_players):
             if new.releases[i] == old.week:
