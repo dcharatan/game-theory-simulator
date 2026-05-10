@@ -98,11 +98,11 @@ def compute_reward(
     new_release = new.releases[player]
 
     # Account for timing.
-    if new_release is not None and old.week < new_release:
-        reward[player] += game.alphas[old.week] * attractiveness
+    # if new_release is not None and old.week < new_release:
+    #     reward[player] += game.alphas[old.week] * attractiveness
 
     # Account for switching.
-    if old_release is not None and old_release != new_release:
+    if old_release != new_release:
         reward[player] += game.beta * attractiveness
 
     # Account for releasing.
@@ -135,7 +135,7 @@ def optimize(
     if state in cache:
         return cache[state]
 
-    best_value = np.zeros((game.num_players,), dtype=np.float32)
+    best_value = None
     best_action = None
 
     for action in valid_actions(game, state):
@@ -144,11 +144,14 @@ def optimize(
         new_value, _ = optimize(game, new, cache)
         old_value = reward + new_value
         p = state.current_player
-        if best_action is None or old_value[p] > best_value[p]:
+        if best_value is None or old_value[p] > best_value[p]:
             best_value = old_value
             best_action = action
 
-    cache[state] = (best_value, best_action)
+    if best_value is None:
+        best_value = np.zeros((game.num_players,), dtype=np.float32)
+
+    # cache[state] = (best_value, best_action)
 
     return best_value, best_action
 
@@ -167,10 +170,18 @@ def play(game: Game) -> tuple[Action, ...]:
 if __name__ == "__main__":
     game = Game(
         np.array((10.0, 10.0)),  # two equally strong players
-        np.array((0.0, 0.0, 5.0, 5.0)),  # two weeks with equal demand
-        np.array((-0.01, 0.01, 0.01, 0.01)),  # best to release after waiting one week
+        np.array((0.0, 9.0, 10.0)),  # two weeks with equal demand
+        np.array((-0.01, 0.01, 0.01)),  # best to release after waiting one week
         -0.1,  # cost of switching
     )
+    _, best_action = optimize(game, initial_state(game), {})
 
     actions = play(game)
+
+    s = initial_state(game)
+    for a in actions:
+        new = advance(s, a)
+        print(compute_reward(game, s, new))
+        s = new
+
     a = 1
