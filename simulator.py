@@ -125,7 +125,7 @@ def compute_reward(
     new_release = new.releases[player]
 
     # Account for timing.
-    if new_release is not None:
+    if new_release is not None and old.week < new_release:
         reward[player] += game.alphas[old.week] * attractiveness
 
     # Account for switching.
@@ -146,6 +146,16 @@ def compute_reward(
 
     return reward
 
+################
+# Optimization #
+################
+
+
+def compute_optimal(
+    game: Game,
+    state: State,
+):
+    pass
 
 if __name__ == "__main__":
     game = Game(
