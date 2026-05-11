@@ -1025,10 +1025,11 @@
         // Release already happened; forced no-op.
         return [null];
       }
-      const out = [null];
+      const out = [];
       for (let w = week; w < W; w++) {
         if (w !== planned) out.push(w);
       }
+      out.push(null); // MBAs are biased towards action; they would never prefer waiting
       return out;
     }
 

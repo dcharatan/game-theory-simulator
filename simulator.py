@@ -73,7 +73,7 @@ def valid_actions(game: Game, state: State) -> tuple[Action, ...]:
     else:
         # If the release hasn't happened yet, it can be changed.
         weeks = range(state.week, game.num_weeks)
-        return (None, *[w for w in weeks if w != planned_release])
+        return (*[w for w in weeks if w != planned_release], None)
 
 
 def advance(state: State, action: Action) -> State:
