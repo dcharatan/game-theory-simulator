@@ -1,3 +1,5 @@
+"""Note: This was coded by hand!"""
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -175,13 +177,14 @@ if __name__ == "__main__":
         -0.1,  # cost of switching
     )
 
+    # run this in a debugger, or use the live demo Claude made based on this code
     v, _ = optimize(game, initial_state(game), {})
     actions = play(game)
+    print(v)
+    print(actions)
 
     s = initial_state(game)
     for a in actions:
         new = advance(s, a)
         print(compute_reward(game, s, new))
         s = new
-
-    a = 1
