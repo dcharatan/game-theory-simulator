@@ -82,7 +82,7 @@
     .masthead .title {
       font-family: var(--serif);
       font-weight: 700;
-      font-size: clamp(38px, 6vw, 64px);
+      font-size: clamp(19px, 3vw, 32px);
       line-height: 0.95;
       letter-spacing: -0.02em;
       margin: 0;
@@ -813,15 +813,11 @@
   <div class="stage">
 
     <header class="masthead">
-      <h1 class="title">Release <em>Timing</em></h1>
+      <h1 class="title">Film Release Simulator</h1>
       <div class="meta">
-        <div class="vol">A game of decisions</div>
-        <div>vol. I &mdash; no. 1</div>
         <div id="phase-indicator">phase: setup</div>
       </div>
     </header>
-    <p class="tagline">An interactive study of strategic release scheduling under finite demand and switching costs
-      &mdash; with an optimizer at your shoulder.</p>
 
     <!-- ============ SETUP SCREEN ============ -->
     <section id="screen-setup" class="screen">
@@ -837,7 +833,7 @@
         <div class="field-row">
           <div class="field-label">
             <span class="lbl-key">num_players</span>
-            <span class="lbl-desc">how many firms compete</span>
+            <span class="lbl-desc">how many film studios compete</span>
           </div>
           <div><input type="number" id="num-players" min="1" max="6" step="1" /></div>
         </div>
