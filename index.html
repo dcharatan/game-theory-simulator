@@ -1128,37 +1128,45 @@
      * =========================================================== */
 
     const PRESETS = {
-      "Classic duopoly": {
+      "Coordination": {
+        num_players: 2,
+        num_weeks: 4,
+        attractivenesses: [5.0, 10.0],
+        demand: [0.0, 0.0, 5.0, 10.0],
+        alphas: [-0.1, 0.1, 0.1, 0.1],
+        beta: -0.1,
+      },
+      "First-Mover Advantage": {
+        num_players: 2,
+        num_weeks: 4,
+        attractivenesses: [10.0, 10.0],
+        demand: [0.0, 0.0, 0.0, 10.0],
+        alphas: [-0.1, -0.1, -0.1, -0.1],
+        beta: -0.1,
+      },
+      "Bifurcated Release Schedule": {
         num_players: 2,
         num_weeks: 5,
         attractivenesses: [10.0, 10.0],
         demand: [0.0, 0.0, 0.0, 4.0, 7.0],
-        alphas: [-0.1, -0.1, -0.1, 0.0, 0.0],
+        alphas: [-0.1, -0.1, -0.1, 0.1, 0.1],
         beta: -0.1,
       },
-      "Symmetric race": {
-        num_players: 2,
-        num_weeks: 4,
-        attractivenesses: [10.0, 10.0],
-        demand: [0.0, 0.0, 5.0, 5.0],
-        alphas: [-0.01, 0.01, 0.01, 0.01],
-        beta: -0.1,
-      },
-      "Three-way": {
-        num_players: 3,
-        num_weeks: 4,
-        attractivenesses: [10.0, 8.0, 6.0],
-        demand: [0.0, 6.0, 6.0, 6.0],
-        alphas: [-0.05, 0.0, 0.0, 0.0],
-        beta: -0.2,
-      },
-      "Hold for late demand": {
+      "Cannibalization": {
         num_players: 2,
         num_weeks: 5,
-        attractivenesses: [12.0, 10.0],
-        demand: [2.0, 2.0, 2.0, 10.0, 10.0],
+        attractivenesses: [10.0, 10.0],
+        demand: [0.0, 0.0, 0.0, 4.0, 10.0],
+        alphas: [-0.1, -0.1, 0.1, 0.1, 0.1],
+        beta: -0.1,
+      },
+      "First-Mover Clash Avoidance": {
+        num_players: 3,
+        num_weeks: 5,
+        attractivenesses: [12.0, 6.0, 6.0],
+        demand: [0.0, 0.0, 0.0, 10.0, 8.0],
         alphas: [0.0, 0.0, 0.0, 0.0, 0.0],
-        beta: -0.05,
+        beta: -0.1,
       },
     };
 
