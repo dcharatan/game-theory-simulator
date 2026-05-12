@@ -1638,14 +1638,14 @@
       }
 
       // Initial form values: the simulator.py example.
-      loadPreset("Classic duopoly");
+      loadPreset("Coordination");
 
       // Resize vectors when num_players or num_weeks change.
       document.getElementById('num-players').addEventListener('change', () => renderVectorInputs());
       document.getElementById('num-weeks').addEventListener('change', () => renderVectorInputs());
 
       // Buttons.
-      document.getElementById('btn-defaults').addEventListener('click', () => loadPreset("Classic duopoly"));
+      document.getElementById('btn-defaults').addEventListener('click', () => loadPreset("Coordination"));
       document.getElementById('btn-to-pick').addEventListener('click', () => {
         const r = readSetup();
         if (!r.ok) { showSetupErrors(r.errors); return; }
